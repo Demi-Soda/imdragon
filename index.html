@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="임용학습">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' app:; script-src 'self' app:; style-src 'self' app: 'unsafe-inline'; img-src 'self' app: blob: data:; worker-src 'self' app: blob:; font-src 'self' app: data:; connect-src 'self' app: blob: data:">
+<title>임용 랜덤 학습</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">임용 랜덤 학습</div>
+  <div class="field subject-field">
+    <span>과목</span>
+    <button id="subjectBtn" class="select-btn" aria-haspopup="true" aria-expanded="false" title="과목을 여러 개 고를 수 있습니다">과목 선택</button>
+    <div id="subjectPop" class="popover hidden" role="dialog" aria-label="과목 고르기">
+      <label class="chk chk-all"><input type="checkbox" id="subjAll"><span class="chk-name">전체 선택</span></label>
+      <div id="subjList" class="chk-list"></div>
+      <div class="pop-foot">
+        <span id="subjSummary" class="pop-summary"></span>
+        <button id="subjCancel" class="btn small">취소</button>
+        <button id="subjApply" class="btn small primary">적용</button>
+      </div>
+    </div>
+  </div>
+  <label class="field">
+    <span>단원</span>
+    <select id="unitSel"></select>
+  </label>
+  <div class="deck-nav">
+    <button id="prevBtn" class="btn" title="이번 순서에서 이전 자료 (←)">◀ 이전</button>
+    <div id="progress" class="progress">–</div>
+    <button id="sideToggle" class="btn mobile-only" title="메모·지난 자료">메모</button>
+    <button id="nextBtn" class="btn primary" title="다음 무작위 자료 (→ 또는 Space)">다음 자료 ▶</button>
+  </div>
+  <div class="spacer"></div>
+  <button id="reloadBtn" class="btn ghost desktop-only" title="자료 폴더를 다시 읽습니다">새로고침</button>
+  <div class="menu-wrap">
+    <button id="menuBtn" class="btn ghost" aria-haspopup="true" aria-expanded="false" title="자료·기록 메뉴">메뉴 ▾</button>
+    <div id="menuPop" class="popover menu-pop hidden" role="menu">
+      <button id="menuFolder" class="menu-item" role="menuitem">자료 폴더 열기</button>
+      <div class="menu-sep"></div>
+      <button id="menuExport" class="menu-item" role="menuitem">기록 내보내기<small>순서·필기·메모를 파일 하나로</small></button>
+      <button id="menuImport" class="menu-item" role="menuitem">기록 가져오기<small>다른 기기에서 내보낸 기록 합치기</small></button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <main class="viewer-wrap">
+    <div id="fileBar" class="filebar hidden">
+      <div class="file-meta">
+        <span id="fileType" class="badge"></span>
+        <span id="fileName" class="file-name"></span>
+        <span id="filePath" class="file-path"></span>
+      </div>
+      <div id="historyBanner" class="history-banner hidden">
+        지난 자료를 보는 중입니다.
+        <button id="backToDeckBtn" class="link-btn">순서로 돌아가기</button>
+      </div>
+      <button id="externalBtn" class="btn ghost small" title="원본을 연결된 프로그램으로 엽니다">원본 프로그램으로 열기</button>
+    </div>
+
+    <div id="toolbar" class="toolbar hidden">
+      <div class="tool-group" role="radiogroup" aria-label="도구">
+        <button class="tool active" data-tool="view" title="보기·스크롤 (V)">보기</button>
+        <button class="tool" data-tool="pen" title="펜 (P)">펜</button>
+        <button class="tool" data-tool="hl" title="형광펜 (H)">형광펜</button>
+        <button class="tool" data-tool="eraser" title="지우개: 선을 통째로 지웁니다 (E)">지우개</button>
+      </div>
+      <div class="tool-group" id="colorGroup"></div>
+      <div class="tool-group">
+        <label class="size-label">굵기
+          <input id="sizeRange" type="range" min="1" max="10" value="3">
+        </label>
+      </div>
+      <div class="tool-group">
+        <button id="undoBtn" class="btn small" title="실행 취소 (Ctrl+Z)">실행 취소</button>
+        <button id="clearBtn" class="btn small danger-text" title="이 파일의 필기를 모두 지웁니다">필기 모두 지우기</button>
+        <button id="clearBtnM" class="btn small danger-text mobile-only" title="이 파일의 필기를 모두 지웁니다">모두 지움</button>
+      </div>
+      <div class="spacer"></div>
+      <div class="tool-group">
+        <button id="zoomOut" class="btn small" title="축소 (Ctrl+-)">－</button>
+        <span id="zoomLabel" class="zoom-label">100%</span>
+        <button id="zoomIn" class="btn small" title="확대 (Ctrl+=)">＋</button>
+      </div>
+      <span id="saveState" class="save-state"></span>
+    </div>
+
+    <div id="scroller" class="scroller">
+      <div id="pages" class="pages"></div>
+      <div id="emptyState" class="empty-state"></div>
+    </div>
+  </main>
+
+  <aside class="side">
+    <div class="tabs">
+      <button id="sideClose" class="side-close mobile-only" aria-label="닫기">✕</button>
+      <button class="tab active" data-tab="memo">메모</button>
+      <button class="tab" data-tab="history">지난 자료</button>
+    </div>
+    <section id="memoPanel" class="panel">
+      <p class="panel-hint">이 자료에 대한 메모입니다. 자동으로 저장되고, 이 자료가 다시 나오면 함께 보입니다.</p>
+      <textarea id="memoBox" placeholder="메모를 입력하세요" disabled></textarea>
+    </section>
+    <section id="historyPanel" class="panel hidden">
+      <p class="panel-hint">고른 과목에서 공부한 자료입니다. 누르면 다시 볼 수 있습니다. 순서는 바뀌지 않습니다.</p>
+      <ol id="historyList" class="history-list"></ol>
+    </section>
+  </aside>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- 핸드폰: 자료 관리 -->
+<div id="manager" class="overlay hidden" role="dialog" aria-label="자료 관리">
+  <div class="sheet">
+    <div class="sheet-head"><h2>자료 관리</h2><button id="managerClose" class="btn small">닫기</button></div>
+    <div id="managerStatus" class="mgr-status hidden"></div>
+    <div id="managerBody"></div>
+  </div>
+</div>
+
+<!-- 핸드폰: 낱개 파일을 넣을 과목·단원 -->
+<div id="targetDlg" class="overlay hidden" role="dialog" aria-label="넣을 곳 정하기">
+  <div class="sheet small-sheet">
+    <h2>어디에 넣을까요?</h2>
+    <p id="targetCount" class="panel-hint"></p>
+    <label class="form-row">과목 <input id="targetSubject" list="subjectOptions" placeholder="예: 교육학" autocomplete="off"></label>
+    <datalist id="subjectOptions"></datalist>
+    <label class="form-row">단원 (없으면 비워 두세요) <input id="targetUnit" placeholder="예: 교육과정" autocomplete="off"></label>
+    <div class="form-actions"><button id="targetCancel" class="btn">취소</button><button id="targetOk" class="btn primary">가져오기</button></div>
+  </div>
+</div>
+
+<input id="recordInput" type="file" hidden>
+<input id="materialInput" type="file" multiple hidden>
+<script type="module" src="renderer.js"></script>
+</body>
+</html>
